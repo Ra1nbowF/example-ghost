@@ -6,13 +6,13 @@ FROM ghost:5-alpine as cloudinary
 RUN apk add --no-cache curl python3 make g++
 
 # Download and install Node.js 18.20.1 directly from nodejs.org.
-# This method bypasses any issues with 'n' trying to locate the base image's 'node' executable.
 # It extracts the Node.js binaries to /usr/local, which is typically in the system's PATH.
 RUN curl -SLO "https://nodejs.org/dist/v18.20.1/node-v18.20.1-linux-x64.tar.gz" \
     && tar -xzf "node-v18.20.1-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
     && rm "node-v18.20.1-linux-x64.tar.gz"
 
-# Explicitly set the PATH to include /usr/local/bin, ensuring 'node' is found.
+# --- IMPORTANT FIX: Set PATH immediately after Node.js installation ---
+# Explicitly set the PATH to include /usr/local/bin, ensuring 'node' is found for subsequent commands.
 ENV PATH="/usr/local/bin:${PATH}"
 
 # Verify that Node.js 18.20.1 is now correctly installed and accessible for the root user.
@@ -38,6 +38,7 @@ RUN curl -SLO "https://nodejs.org/dist/v18.20.1/node-v18.20.1-linux-x64.tar.gz" 
     && tar -xzf "node-v18.20.1-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
     && rm "node-v18.20.1-linux-x64.tar.gz"
 
+# --- IMPORTANT FIX: Set PATH immediately after Node.js installation in the final stage ---
 # Explicitly set the PATH to include /usr/local/bin in the final stage.
 ENV PATH="/usr/local/bin:${PATH}"
 
