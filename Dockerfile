@@ -12,6 +12,9 @@ RUN curl -SLO "https://nodejs.org/dist/v18.20.1/node-v18.20.1-linux-x64.tar.gz" 
     && tar -xzf "node-v18.20.1-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
     && rm "node-v18.20.1-linux-x64.tar.gz"
 
+# Explicitly set the PATH to include /usr/local/bin, ensuring 'node' is found.
+ENV PATH="/usr/local/bin:${PATH}"
+
 # Verify that Node.js 18.20.1 is now correctly installed and accessible for the root user.
 RUN node -v
 
@@ -34,6 +37,9 @@ RUN apk add --no-cache curl python3 make g++
 RUN curl -SLO "https://nodejs.org/dist/v18.20.1/node-v18.20.1-linux-x64.tar.gz" \
     && tar -xzf "node-v18.20.1-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
     && rm "node-v18.20.1-linux-x64.tar.gz"
+
+# Explicitly set the PATH to include /usr/local/bin in the final stage.
+ENV PATH="/usr/local/bin:${PATH}"
 
 # Copy the installed node_modules and specifically the ghost-storage-cloudinary adapter
 # from the 'cloudinary' build stage to the final image.
