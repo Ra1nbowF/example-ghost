@@ -1,35 +1,39 @@
 # Stage 1: Build stage for installing ghost-storage-cloudinary
 FROM ghost:5-alpine as cloudinary
 
-# Install necessary build tools (g++, make, python3) and curl for 'n' (Node.js version manager).
+# Install necessary build tools (g++, make, python3) and curl.
 # '--no-cache' keeps the image size smaller.
-RUN apk add --no-cache curl python3 make g++ && \
-    # Download the 'n' script and make it executable.
-    curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o /usr/local/bin/n && \
-    chmod +x /usr/local/bin/n
+RUN apk add --no-cache curl python3 make g++
 
-# Install Node.js version 18.20.1 using 'n'. This will override the default Node.js version in the image.
-# You can check Node.js's official releases for the latest stable 18.x.x LTS version if needed.
-RUN n 18.20.1
+# Download and install Node.js 18.20.1 directly from nodejs.org.
+# This method bypasses any issues with 'n' trying to locate the base image's 'node' executable.
+# It extracts the Node.js binaries to /usr/local, which is typically in the system's PATH.
+RUN curl -SLO "https://nodejs.org/dist/v18.20.1/node-v18.20.1-linux-x64.tar.gz" \
+    && tar -xzf "node-v18.20.1-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
+    && rm "node-v18.20.1-linux-x64.tar.gz"
 
-# Set the PATH environment variable to prioritize the newly installed Node.js 18.
-# This ensures that subsequent commands, especially for the 'node' user, use this specific version.
-ENV PATH="/usr/local/n/versions/node/18.20.1/bin:${PATH}"
+# Verify that Node.js 18.20.1 is now correctly installed and accessible for the root user.
+RUN node -v
 
-# Install the ghost-storage-cloudinary package.
+# Verify that Node.js 18.20.1 is also accessible for the 'node' user.
+# This is crucial for 'yarn' and 'ghost-storage-cloudinary' to function correctly.
+RUN su-exec node node -v
+
+# Install the ghost-storage-cloudinary package using yarn.
 # 'su-exec node' ensures the command runs under the 'node' user, which is Ghost's default user.
 RUN su-exec node yarn add ghost-storage-cloudinary
 
 # --- Stage 2: Final Ghost Application Image ---
 FROM ghost:5-alpine
 
-# Re-install Node.js 18.20.1 in the final image.
-# This is crucial because the final running Ghost application also needs Node.js 18.
-RUN apk add --no-cache curl python3 make g++ && \
-    curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o /usr/local/bin/n && \
-    chmod +x /usr/local/bin/n
-RUN n 18.20.1
-ENV PATH="/usr/local/n/versions/node/18.20.1/bin:${PATH}"
+# Install necessary build tools in the final image.
+RUN apk add --no-cache curl python3 make g++
+
+# Download and install Node.js 18.20.1 directly in the final image as well.
+# This ensures the running Ghost application uses the correct Node.js version.
+RUN curl -SLO "https://nodejs.org/dist/v18.20.1/node-v18.20.1-linux-x64.tar.gz" \
+    && tar -xzf "node-v18.20.1-linux-x64.tar.gz" -C /usr/local --strip-components=1 \
+    && rm "node-v18.20.1-linux-x64.tar.gz"
 
 # Copy the installed node_modules and specifically the ghost-storage-cloudinary adapter
 # from the 'cloudinary' build stage to the final image.
